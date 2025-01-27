@@ -53,16 +53,14 @@ Eigen::VectorXf trainLayer(std::vector<Layer> &nn, const Eigen::VectorXf &inputs
 
 	Eigen::VectorXf zs = (nn[layer].weights * inputs).colwise() + nn[layer].biases;
 
-	Eigen::VectorXf activations = nn[layer].activation.activation(zs);
+	Eigen::VectorXf delta = trainLayer(nn, nn[layer].activation.activation(zs), learningRate, lossDerivative, layer + 1).cwiseProduct(nn[layer].activation.derivative(zs));
 
-	Eigen::VectorXf gradient = nn[layer].activation.derivative(zs).cwiseProduct(trainLayer(nn, activations, learningRate, lossDerivative, layer + 1));
+	Eigen::VectorXf update = learningRate * delta;
 
-	Eigen::VectorXf delta = learningRate * gradient;
+	nn[layer].weights -= update * inputs.transpose();
+	nn[layer].biases -= update;
 
-	nn[layer].weights -= delta * inputs.transpose();
-	nn[layer].biases -= delta;
-
-	return nn[layer].weights.transpose() * gradient;
+	return nn[layer].weights.transpose() * delta;
 }
 
 void trainNeuralNetwork(std::vector<Layer> &nn, const Eigen::VectorXf& input, const Eigen::VectorXf& target, float learningRate) {
@@ -82,31 +80,32 @@ void trainNeuralNetwork(std::vector<Layer> &nn, const Eigen::VectorXf& input, co
 		activations.push_back(currentActivation);
 	}
 
-	Eigen::VectorXf derivative = activations.back() - target;
+	Eigen::VectorXf error = activations.back() - target;
 
 	for (int layer = nn.size() - 1; layer >= 0; --layer) {
-		Eigen::VectorXf gradient = derivative.cwiseProduct(nn[layer].activation.derivative(zs[layer]));
+		Eigen::VectorXf delta = error.cwiseProduct(nn[layer].activation.derivative(zs[layer]));
 
-		Eigen::VectorXf delta = gradient * learningRate;
+		Eigen::VectorXf update = delta * learningRate;
 
-		nn[layer].weights -= delta * activations[layer].transpose();
-		nn[layer].biases -= delta;
+		nn[layer].weights -= update * activations[layer].transpose();
+		nn[layer].biases -= update;
 
-		derivative = nn[layer].weights.transpose() * gradient;
+		error = nn[layer].weights.transpose() * delta;
 	}
 }
 
 int main() {
-	std::vector<Layer> nn = createNeuralNetwork({2, 3, 2}, Sigmoid);
+	std::vector<Layer> nn = createNeuralNetwork({2, 3, 3}, Sigmoid);
 
 	// Individual sample input and target (XOR problem)
 	Eigen::MatrixXf inputs(2, 4);
 	inputs << 0, 0, 1, 1,
 	          0, 1, 0, 1;
 
-	Eigen::MatrixXf targets(2, 4);
+	Eigen::MatrixXf targets(3, 4);
 	targets << 0, 1, 1, 0,
-	           0, 0, 0, 1;
+	           0, 0, 0, 1,
+	           0, 1, 1, 1;
 
 	// Learning loop
 	for (size_t epoch = 0; epoch < 10000; ++epoch) {
@@ -125,7 +124,7 @@ int main() {
 			};
 
 			// Train for the current sample
-			//trainLayer(nn, inputSample, 0.1, lossDerivative);
+			trainLayer(nn, inputSample, 0.1, lossDerivative);
 			//trainNeuralNetwork(nn, inputSample, target, 0.1);
 		}
 
@@ -140,8 +139,9 @@ int main() {
 
 	// Print results
 	for (size_t i = 0; i < outputs.cols(); ++i) {
-		std::println("{} XOR {} = {}", inputs(0, i), inputs(1, i), outputs(0, i));
-		std::println("{} AND {} = {}", inputs(0, i), inputs(1, i), outputs(1, i));
+		std::println("{} XOR {} = {}", inputs(0, i), inputs(1, i), outputs(0, i) > 0.5f);
+		std::println("{} AND {} = {}", inputs(0, i), inputs(1, i), outputs(1, i) > 0.5f);
+		std::println("{} OR {} = {}", inputs(0, i), inputs(1, i), outputs(2, i) > 0.5f);
 	}
 
 	return 0;

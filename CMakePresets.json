@@ -1,0 +1,20 @@
+{
+		"version": 3,
+		"cmakeMinimumRequired": {
+			"major": 3,
+			"minor": 30,
+			"patch": 0
+		},
+		"configurePresets": [
+			{
+				"name": "default",
+				"generator": "Ninja Multi-Config",
+				"binaryDir": "${sourceDir}/build",
+				"cacheVariables": {
+					"CMAKE_PROJECT_TOP_LEVEL_INCLUDES": "conan_provider.cmake",
+					"CMAKE_COLOR_DIAGNOSTICS": "ON"
+				}
+			}
+		]
+	}
+	

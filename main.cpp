@@ -8,15 +8,16 @@
 #include <Eigen/Core>
 
 #include "activation.h"
+#include "idx.h"
 
 struct Activation {
 	std::function<Eigen::MatrixXf(const Eigen::MatrixXf &)> activation;
 	std::function<Eigen::MatrixXf(const Eigen::MatrixXf &)> derivative;
 };
 
-const Activation Sigmoid { sigmoidActivation, sigmoidDerivative };
-const Activation Tanh { tanhActivation, tanhDerivative };
-const Activation Relu { reluActivation, reluDerivative };
+const Activation Sigmoid { Activations::sigmoid, Activations::sigmoid_derivative };
+const Activation Tanh { Activations::tanh, Activations::tanh_derivative };
+const Activation Relu { Activations::relu, Activations::relu_derivative };
 
 struct Layer {
 	Eigen::MatrixXf weights;
@@ -25,25 +26,18 @@ struct Layer {
 	Activation activation;
 };
 
-template <size_t N>
-std::vector<Layer> constexpr createNeuralNetwork(std::span<const uint64_t, N + 1> topology, std::span<const Activation, N> activations) {
-	std::vector<Layer> nn{};
-
-	for (size_t i = 0; i < N; ++i) {
-		nn.emplace_back(Eigen::MatrixXf::Random(topology[i + 1], topology[i]), Eigen::VectorXf::Random(topology[i + 1]), activations[i]);
-	}
-
-	return nn;
+Layer random_layer(size_t inputs, size_t outputs, const Activation &activation) {
+	return { Eigen::MatrixXf::Random(outputs, inputs), Eigen::VectorXf::Random(outputs), activation };
 }
 
-Eigen::MatrixXf constexpr feedLayer(std::span<const Layer> nn, const Eigen::MatrixXf &inputs) {
+Eigen::MatrixXf constexpr feed(std::span<const Layer> nn, const Eigen::MatrixXf &inputs) {
 	if (nn.empty()) {
 		return inputs;
 	}
 
 	const Layer &layer = nn.front();
 
-	return feedLayer(nn.subspan(1), layer.activation.activation((layer.weights * inputs).colwise() + layer.biases));
+	return feed(nn.subspan(1), layer.activation.activation((layer.weights * inputs).colwise() + layer.biases));
 }
 
 template<typename F>
@@ -52,7 +46,7 @@ concept LossDerivative = requires(const F &f, const Eigen::MatrixXf &outputs) {
 };
 
 template <LossDerivative F>
-Eigen::MatrixXf constexpr trainLayer(std::span<Layer> nn, const Eigen::MatrixXf &inputs, float learningRate, const F &lossDerivative) {
+Eigen::MatrixXf constexpr train(std::span<Layer> nn, const Eigen::MatrixXf &inputs, float learningRate, const F &lossDerivative) {
 	if (nn.empty()) {
 		return lossDerivative(inputs);
 	}
@@ -61,7 +55,7 @@ Eigen::MatrixXf constexpr trainLayer(std::span<Layer> nn, const Eigen::MatrixXf 
 
 	Eigen::MatrixXf zs = (layer.weights * inputs).colwise() + layer.biases;
 
-	Eigen::MatrixXf delta = trainLayer(nn.subspan(1), layer.activation.activation(zs), learningRate, lossDerivative).cwiseProduct(layer.activation.derivative(zs));
+	Eigen::MatrixXf delta = train(nn.subspan(1), layer.activation.activation(zs), learningRate, lossDerivative).cwiseProduct(layer.activation.derivative(zs));
 
 	layer.weights -= learningRate * delta * inputs.transpose();
 	layer.biases -= learningRate * delta.rowwise().sum();
@@ -69,66 +63,48 @@ Eigen::MatrixXf constexpr trainLayer(std::span<Layer> nn, const Eigen::MatrixXf 
 	return layer.weights.transpose() * delta;
 }
 
-template <LossDerivative F>
-void constexpr trainNeuralNetwork(std::span<Layer> nn, const Eigen::MatrixXf& input, float learningRate, const F &lossDerivative) {
-	std::vector<Eigen::MatrixXf> activations, zs;
-
-	activations.push_back(input);
-
-	for (size_t i = 0; i < std::size(nn); ++i) {
-		Eigen::MatrixXf z = (nn[i].weights * activations.back()).colwise() + nn[i].biases;
-		
-		zs.push_back(z);
-
-		activations.push_back(nn[i].activation.activation(z));
+int main(int argc, const char *argv[]) {
+	if (argc != 3)
+	{
+		std::println("Usage: {} <path-to-inputs> <path-to-labels>", argv[0]);
+		return 1;
 	}
 
-	Eigen::MatrixXf error = lossDerivative(activations.back());
+	Eigen::MatrixXf inputs = read_idx_images(argv[1]);
+	Eigen::MatrixXf labels = read_idx_labels(argv[2]);
 
-	for (int layer = nn.size() - 1; layer >= 0; --layer) {
-		Eigen::MatrixXf delta = error.cwiseProduct(nn[layer].activation.derivative(zs[layer]));
+	std::vector<Layer> nn {
+		random_layer(inputs.rows(), 700, Sigmoid),
+		random_layer(700, 100, Sigmoid),
+		random_layer(100, labels.rows(), Sigmoid),
+	};
 
-		nn[layer].weights -= learningRate * delta * activations[layer].transpose();
-		nn[layer].biases -= learningRate * delta.rowwise().sum();
+	const size_t BATCH_SIZE = 32;
 
-		error = nn[layer].weights.transpose() * delta;
-	}
-}
+	for (size_t epoch = 0; epoch < 10; ++epoch) {
+		for (size_t batch_start = 0; batch_start < inputs.cols(); batch_start += BATCH_SIZE) {
+			size_t batch_end = std::min(batch_start + BATCH_SIZE, static_cast<size_t>(inputs.cols()));
 
-int main() {
-	std::vector<Layer> nn = createNeuralNetwork<2>(std::array<uint64_t, 3>{2, 3, 3}, std::array<Activation, 2>{Sigmoid, Sigmoid});
-
-	Eigen::MatrixXf inputs(2, 4);
-	inputs << 0, 0, 1, 1,
-	          0, 1, 0, 1;
-
-	Eigen::MatrixXf targets(3, 4);
-	targets << 0, 1, 1, 0,
-	           0, 0, 0, 1,
-	           0, 1, 1, 1;
-
-	for (size_t epoch = 0; epoch < 100000; ++epoch) {
-		auto lossDerivative = [&](const Eigen::MatrixXf &outputs) -> Eigen::MatrixXf {
+			Eigen::MatrixXf batch_inputs = inputs.block(0, batch_start, inputs.rows(), batch_end - batch_start);
+			Eigen::MatrixXf batch_labels = labels.block(0, batch_start, labels.rows(), batch_end - batch_start);
 			
-			if (epoch % 1000 == 0) {
-				float loss = -(targets.array() * outputs.array().log() + (1 - targets.array()) * (1 - outputs.array()).log()).colwise().sum().mean();
-				std::println("epoch {}: loss {}", epoch, loss);
-			}
-			
-			return outputs - targets;
-		};
+			auto lossDerivative = [&](const Eigen::MatrixXf &outputs) -> Eigen::MatrixXf {
+				return outputs - batch_labels; // TODO softmax
+			};
 
-		trainLayer(nn, inputs, 0.1, lossDerivative);
-		trainNeuralNetwork(nn, inputs, 0.1, lossDerivative);
+			train(nn, batch_inputs, 0.01, lossDerivative);
+		}
+
+		Eigen::MatrixXf outputs = feed(nn, inputs); // TODO use testing dataset
+		float loss = -(labels.array() * outputs.array().log() + (1 - labels.array()) * (1 - outputs.array()).log()).colwise().sum().mean();
+		std::println("epoch {}: loss {}", epoch, loss); // TODO softmax
 	}
 
-	Eigen::MatrixXf outputs = feedLayer(nn, inputs);
+	// TODO serialize architecture and coeffs, load in different tool
 
-	for (size_t i = 0; i < outputs.cols(); ++i) {
-		std::println("{} XOR {} = {}", inputs(0, i) > 0.5f, inputs(1, i) > 0.5f, outputs(0, i) > 0.5f);
-		std::println("{} AND {} = {}", inputs(0, i) > 0.5f, inputs(1, i) > 0.5f, outputs(1, i) > 0.5f);
-		std::println("{} OR {} = {}", inputs(0, i) > 0.5f, inputs(1, i) > 0.5f, outputs(2, i) > 0.5f);
-	}
+	Eigen::MatrixXf outputs = feed(nn, inputs);
+
+	// TODO print output, use testing dataset
 
 	return 0;
 }

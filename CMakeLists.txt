@@ -8,8 +8,8 @@ add_executable(main)
 
 target_sources(main PRIVATE
 	activation.h
-	loss.h
-	main.cpp 
+	main.cpp
+	idx.h
 )
 
 target_link_libraries(main PRIVATE Eigen3::Eigen)

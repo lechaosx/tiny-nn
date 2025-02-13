@@ -18,6 +18,7 @@ struct Activation {
 const Activation Sigmoid { Activations::sigmoid, Activations::sigmoid_derivative };
 const Activation Tanh { Activations::tanh, Activations::tanh_derivative };
 const Activation Relu { Activations::relu, Activations::relu_derivative };
+const Activation Softmax { Activations::softmax, Activations::softmax_derivative };
 
 struct Layer {
 	Eigen::MatrixXf weights;
@@ -26,7 +27,7 @@ struct Layer {
 	Activation activation;
 };
 
-Layer random_layer(size_t inputs, size_t outputs, const Activation &activation) {
+Layer random_layer(Eigen::Index inputs, Eigen::Index outputs, const Activation &activation) {
 	return { Eigen::MatrixXf::Random(outputs, inputs), Eigen::VectorXf::Random(outputs), activation };
 }
 
@@ -45,6 +46,7 @@ concept LossDerivative = requires(const F &f, const Eigen::MatrixXf &outputs) {
 	{ f(outputs) } -> std::same_as<Eigen::MatrixXf>;
 };
 
+
 template <LossDerivative F>
 Eigen::MatrixXf constexpr train(std::span<Layer> nn, const Eigen::MatrixXf &inputs, float learningRate, const F &lossDerivative) {
 	if (nn.empty()) {
@@ -55,7 +57,7 @@ Eigen::MatrixXf constexpr train(std::span<Layer> nn, const Eigen::MatrixXf &inpu
 
 	Eigen::MatrixXf zs = (layer.weights * inputs).colwise() + layer.biases;
 
-	Eigen::MatrixXf delta = train(nn.subspan(1), layer.activation.activation(zs), learningRate, lossDerivative).cwiseProduct(layer.activation.derivative(zs));
+	Eigen::MatrixXf delta = train(nn.subspan(1), layer.activation.activation(zs), learningRate, lossDerivative).array() * layer.activation.derivative(zs).array();
 
 	layer.weights -= learningRate * delta * inputs.transpose();
 	layer.biases -= learningRate * delta.rowwise().sum();
@@ -64,47 +66,61 @@ Eigen::MatrixXf constexpr train(std::span<Layer> nn, const Eigen::MatrixXf &inpu
 }
 
 int main(int argc, const char *argv[]) {
-	if (argc != 3)
+	if (argc != 5)
 	{
-		std::println("Usage: {} <path-to-inputs> <path-to-labels>", argv[0]);
+		std::println("Usage: {} <path-to-train-inputs> <path-to-train-labels> <path-to-test-inputs> <path-to-test-labels>", argv[0]);
 		return 1;
 	}
 
 	Eigen::MatrixXf inputs = read_idx_images(argv[1]);
 	Eigen::MatrixXf labels = read_idx_labels(argv[2]);
 
+	Eigen::MatrixXf test_inputs = read_idx_images(argv[3]);
+	Eigen::MatrixXf test_labels = read_idx_labels(argv[4]);
+
 	std::vector<Layer> nn {
-		random_layer(inputs.rows(), 700, Sigmoid),
-		random_layer(700, 100, Sigmoid),
-		random_layer(100, labels.rows(), Sigmoid),
+		random_layer(inputs.rows(), 512, Sigmoid), // Relu is making this much worse and I do not know why!
+		random_layer(512, 256, Sigmoid),
+		random_layer(256, 128, Sigmoid),
+		random_layer(128, labels.rows(), Softmax),
 	};
 
 	const size_t BATCH_SIZE = 32;
 
 	for (size_t epoch = 0; epoch < 10; ++epoch) {
-		for (size_t batch_start = 0; batch_start < inputs.cols(); batch_start += BATCH_SIZE) {
-			size_t batch_end = std::min(batch_start + BATCH_SIZE, static_cast<size_t>(inputs.cols()));
+		for (Eigen::Index batch_start = 0; batch_start < inputs.cols(); batch_start += BATCH_SIZE) {
+			const size_t batch_end = std::min(batch_start + BATCH_SIZE, static_cast<size_t>(inputs.cols()));
 
 			Eigen::MatrixXf batch_inputs = inputs.block(0, batch_start, inputs.rows(), batch_end - batch_start);
 			Eigen::MatrixXf batch_labels = labels.block(0, batch_start, labels.rows(), batch_end - batch_start);
 			
 			auto lossDerivative = [&](const Eigen::MatrixXf &outputs) -> Eigen::MatrixXf {
-				return outputs - batch_labels; // TODO softmax
+				return outputs - batch_labels; // Cross-entropy
 			};
 
 			train(nn, batch_inputs, 0.01, lossDerivative);
 		}
 
-		Eigen::MatrixXf outputs = feed(nn, inputs); // TODO use testing dataset
-		float loss = -(labels.array() * outputs.array().log() + (1 - labels.array()) * (1 - outputs.array()).log()).colwise().sum().mean();
-		std::println("epoch {}: loss {}", epoch, loss); // TODO softmax
+		Eigen::MatrixXf outputs = feed(nn, test_inputs);
+
+		int correct_predictions = 0;
+
+		for (int i = 0; i < outputs.cols(); ++i) {
+			int predicted_class;
+			int expected_class;
+
+			outputs.col(i).maxCoeff(&predicted_class);
+			test_labels.col(i).maxCoeff(&expected_class);
+
+			correct_predictions += (predicted_class == expected_class);
+		}
+
+		float accuracy = static_cast<float>(correct_predictions) / outputs.cols() * 100;
+
+		std::println("accuracy {} %", accuracy);
 	}
 
 	// TODO serialize architecture and coeffs, load in different tool
-
-	Eigen::MatrixXf outputs = feed(nn, inputs);
-
-	// TODO print output, use testing dataset
 
 	return 0;
 }

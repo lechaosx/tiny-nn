@@ -27,16 +27,24 @@ inline constexpr Eigen::MatrixXf tanh_derivative(const Eigen::MatrixXf& x) {
 }
 
 inline constexpr Eigen::MatrixXf relu(const Eigen::MatrixXf& x) {
-	return x.unaryExpr([](float val) { return std::max(0.0f, val); });
+	return x.unaryExpr([](float val) {
+		return std::max(0.0f, val); 
+	});
 }
 
 inline constexpr Eigen::MatrixXf relu_derivative(const Eigen::MatrixXf& x) {
-	return x.unaryExpr([](float val) { return val > 0 ? 1.0f : 0.0f; });
+	return x.unaryExpr([](float val) {
+		return val > 0.f ? 1.0f : 0.0f; 
+	});
 }
 
 inline constexpr Eigen::MatrixXf softmax(const Eigen::MatrixXf& x) {
-	Eigen::MatrixXf expVals = (x.rowwise() - x.colwise().maxCoeff()).array().exp();
-	return expVals.array().rowwise() / (expVals.colwise().sum()).array();
+	Eigen::MatrixXf expVals = (x.array().rowwise() - x.array().colwise().maxCoeff()).exp();
+	return expVals.array().rowwise() / expVals.array().colwise().sum();
+}
+
+inline constexpr Eigen::MatrixXf softmax_derivative(const Eigen::MatrixXf& x) {
+	return Eigen::MatrixXf::Ones(x.rows(), x.cols()); // Asssume cross-entropy loss
 }
 
 }

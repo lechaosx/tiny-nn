@@ -23,15 +23,14 @@ const Activation Softmax { Activations::softmax, Activations::softmax_derivative
 struct Layer {
 	Eigen::MatrixXf weights;
 	Eigen::VectorXf biases;
-
 	Activation activation;
 };
 
 Layer random_layer(Eigen::Index inputs, Eigen::Index outputs, const Activation &activation) {
-	return { Eigen::MatrixXf::Random(outputs, inputs), Eigen::VectorXf::Random(outputs), activation };
+	return { Eigen::MatrixXf::Random(outputs, inputs), Eigen::VectorXf::Zero(outputs), activation };
 }
 
-Eigen::MatrixXf constexpr feed(std::span<const Layer> nn, const Eigen::MatrixXf &inputs) {
+constexpr Eigen::MatrixXf feed(std::span<const Layer> nn, const Eigen::MatrixXf &inputs) {
 	if (nn.empty()) {
 		return inputs;
 	}
@@ -48,21 +47,23 @@ concept LossDerivative = requires(const F &f, const Eigen::MatrixXf &outputs) {
 
 
 template <LossDerivative F>
-Eigen::MatrixXf constexpr train(std::span<Layer> nn, const Eigen::MatrixXf &inputs, float learningRate, const F &lossDerivative) {
+constexpr Eigen::MatrixXf train(std::span<Layer> nn, const Eigen::MatrixXf &inputs, float learningRate, const F &lossDerivative) {
 	if (nn.empty()) {
 		return lossDerivative(inputs);
 	}
 
 	Layer &layer = nn.front();
 
-	Eigen::MatrixXf zs = (layer.weights * inputs).colwise() + layer.biases;
+	Eigen::MatrixXf activations = layer.activation.activation((layer.weights * inputs).colwise() + layer.biases);
 
-	Eigen::MatrixXf delta = train(nn.subspan(1), layer.activation.activation(zs), learningRate, lossDerivative).array() * layer.activation.derivative(zs).array();
+	Eigen::MatrixXf delta = train(nn.subspan(1), activations, learningRate, lossDerivative).array() * layer.activation.derivative(activations).array();
 
-	layer.weights -= learningRate * delta * inputs.transpose();
-	layer.biases -= learningRate * delta.rowwise().sum();
+	Eigen::MatrixXf prev_delta = layer.weights.transpose() * delta;
 
-	return layer.weights.transpose() * delta;
+	layer.weights -= learningRate * delta * inputs.transpose() / inputs.cols();
+	layer.biases -= learningRate * delta.rowwise().sum() / inputs.cols();
+
+	return prev_delta;
 }
 
 int main(int argc, const char *argv[]) {
@@ -79,13 +80,12 @@ int main(int argc, const char *argv[]) {
 	Eigen::MatrixXf test_labels = read_idx_labels(argv[4]);
 
 	std::vector<Layer> nn {
-		random_layer(inputs.rows(), 512, Sigmoid), // Relu is making this much worse and I do not know why!
-		random_layer(512, 256, Sigmoid),
-		random_layer(256, 128, Sigmoid),
-		random_layer(128, labels.rows(), Softmax),
+		random_layer(inputs.rows(), 512, Relu),
+		random_layer(512, 256, Relu),
+		random_layer(256, labels.rows(), Softmax),
 	};
 
-	const size_t BATCH_SIZE = 32;
+	const size_t BATCH_SIZE = 64;
 
 	for (size_t epoch = 0; epoch < 10; ++epoch) {
 		for (Eigen::Index batch_start = 0; batch_start < inputs.cols(); batch_start += BATCH_SIZE) {
@@ -95,7 +95,7 @@ int main(int argc, const char *argv[]) {
 			Eigen::MatrixXf batch_labels = labels.block(0, batch_start, labels.rows(), batch_end - batch_start);
 			
 			auto lossDerivative = [&](const Eigen::MatrixXf &outputs) -> Eigen::MatrixXf {
-				return outputs - batch_labels; // Cross-entropy
+				return outputs - batch_labels;
 			};
 
 			train(nn, batch_inputs, 0.01, lossDerivative);

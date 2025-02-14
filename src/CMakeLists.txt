@@ -4,11 +4,9 @@ find_package(Eigen3 REQUIRED)
 
 add_executable(train)
 
-target_sources(train PRIVATE
-	activation.h
-	main.cpp
-	idx.h
-)
+file(GLOB SOURCES CONFIGURE_DEPENDS *)
+
+target_sources(train PRIVATE ${SOURCES})
 
 target_link_libraries(train PRIVATE Eigen3::Eigen)
 

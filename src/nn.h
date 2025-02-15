@@ -37,9 +37,9 @@ inline constexpr Eigen::MatrixXf train(std::span<Layer> nn, const Eigen::MatrixX
 
 	Layer &layer = nn.front();
 
-	Eigen::MatrixXf activations = layer.activation.activation((layer.weights * inputs).colwise() + layer.biases);
+	auto linear_output = (layer.weights * inputs).colwise() + layer.biases;
 
-	Eigen::MatrixXf delta = train(nn.subspan(1), activations, learningRate, lossDerivative).array() * layer.activation.derivative(activations).array();
+	Eigen::MatrixXf delta = train(nn.subspan(1), layer.activation.activation(linear_output), learningRate, lossDerivative).array() * layer.activation.derivative(linear_output).array();
 
 	Eigen::MatrixXf prev_delta = layer.weights.transpose() * delta;
 

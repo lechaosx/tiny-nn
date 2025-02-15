@@ -3,14 +3,10 @@
 #include <Eigen/Core>
 
 #include "nn.h"
-#include "activation.h"
+#include "activations.h"
+#include "loss_functions.h"
+#include "derivatives.h"
 #include "idx.h"
-#include "loss.h"
-
-const Activation Sigmoid { Activations::sigmoid, Activations::sigmoid_derivative };
-const Activation Tanh { Activations::tanh, Activations::tanh_derivative };
-const Activation Relu { Activations::relu, Activations::relu_derivative };
-const Activation Linear { Activations::linear, Activations::linear_derivative };
 
 Layer xavier_layer(Eigen::Index inputs, Eigen::Index outputs, const Activation &activation) {
 	float limit = std::sqrt(6.f / (inputs + outputs));
@@ -41,9 +37,9 @@ int main(int argc, const char *argv[]) {
 	uint8_t num_classes = *std::max_element(labels.data(), labels.data() + labels.cols()) + 1;
 
 	std::vector<Layer> nn {
-		xavier_layer(inputs.rows(), 512, Relu),
-		xavier_layer(512, 256, Relu),
-		xavier_layer(256, num_classes, Linear),
+		xavier_layer(inputs.rows(), 512, Activation::RELU),
+		xavier_layer(512, 256, Activation::RELU),
+		xavier_layer(256, num_classes, Activation::LINEAR),
 	};
 
 	const size_t NUM_EPOCHS = 10;
@@ -59,8 +55,8 @@ int main(int argc, const char *argv[]) {
 			Eigen::MatrixXf batch_labels = one_hot_encode(labels.block(0, batch_start, labels.rows(), batch_end - batch_start), num_classes);
 			
 			auto lossDerivative = [&](const Eigen::MatrixXf &outputs) -> Eigen::MatrixXf {
-				loss += softmax_cross_entropy(outputs, batch_labels);
-				return softmax_cross_entropy_derivative(outputs, batch_labels);
+				loss += LossFunctions::softmax_cross_entropy(outputs, batch_labels);
+				return Derivatives::softmax_cross_entropy(outputs, batch_labels);
 			};
 
 			train(nn, batch_inputs, 0.01, lossDerivative);
@@ -86,7 +82,7 @@ int main(int argc, const char *argv[]) {
 
 	std::println("Accuracy {} %", accuracy);
 
-	// TODO serialize architecture and coeffs, load in different tool
+	//SERIALIZACE TADY I V REC PYTHONU. SERIALIZOVAT V PYTHONU INICIALNI HODNOTY A ZKUSIT TADY JAKO ZACATEK. Melo by se ucit identicky
 
 	return 0;
 }

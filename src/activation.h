@@ -4,6 +4,14 @@
 
 namespace Activations {
 
+inline constexpr Eigen::MatrixXf linear(const Eigen::MatrixXf& x) {
+	return x;
+}
+
+inline constexpr Eigen::MatrixXf linear_derivative(const Eigen::MatrixXf& x) {
+	return Eigen::MatrixXf::Ones(x.rows(), x.cols());
+}
+
 inline constexpr Eigen::MatrixXf sigmoid(const Eigen::MatrixXf& x) {
 	return x.unaryExpr([](float val) { return 1.0f / (1.0f + std::exp(-val)); });
 }
@@ -36,15 +44,6 @@ inline constexpr Eigen::MatrixXf relu_derivative(const Eigen::MatrixXf& x) {
 	return x.unaryExpr([](float val) {
 		return val > 0.f ? 1.0f : 0.0f; 
 	});
-}
-
-inline constexpr Eigen::MatrixXf softmax(const Eigen::MatrixXf& x) {
-	Eigen::MatrixXf expVals = (x.array().rowwise() - x.array().colwise().maxCoeff()).exp();
-	return expVals.array().rowwise() / expVals.array().colwise().sum();
-}
-
-inline constexpr Eigen::MatrixXf softmax_derivative(const Eigen::MatrixXf& x) {
-	return Eigen::MatrixXf::Ones(x.rows(), x.cols()); // Asssume cross-entropy loss
 }
 
 }

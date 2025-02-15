@@ -10,7 +10,7 @@
 const Activation Sigmoid { Activations::sigmoid, Activations::sigmoid_derivative };
 const Activation Tanh { Activations::tanh, Activations::tanh_derivative };
 const Activation Relu { Activations::relu, Activations::relu_derivative };
-const Activation Softmax { Activations::softmax, Activations::softmax_derivative };
+const Activation Linear { Activations::linear, Activations::linear_derivative };
 
 Layer xavier_layer(Eigen::Index inputs, Eigen::Index outputs, const Activation &activation) {
 	float limit = std::sqrt(6.f / (inputs + outputs));
@@ -43,7 +43,7 @@ int main(int argc, const char *argv[]) {
 	std::vector<Layer> nn {
 		xavier_layer(inputs.rows(), 512, Relu),
 		xavier_layer(512, 256, Relu),
-		xavier_layer(256, num_classes, Softmax),
+		xavier_layer(256, num_classes, Linear),
 	};
 
 	const size_t NUM_EPOCHS = 10;
@@ -59,8 +59,8 @@ int main(int argc, const char *argv[]) {
 			Eigen::MatrixXf batch_labels = one_hot_encode(labels.block(0, batch_start, labels.rows(), batch_end - batch_start), num_classes);
 			
 			auto lossDerivative = [&](const Eigen::MatrixXf &outputs) -> Eigen::MatrixXf {
-				loss += cross_entropy(outputs, batch_labels);
-				return cross_entropy_derivative(outputs, batch_labels);
+				loss += softmax_cross_entropy(outputs, batch_labels);
+				return softmax_cross_entropy_derivative(outputs, batch_labels);
 			};
 
 			train(nn, batch_inputs, 0.01, lossDerivative);

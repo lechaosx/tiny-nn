@@ -2,11 +2,11 @@
 
 #include <Eigen/Core>
 
-#include "nn.h"
-#include "activations.h"
-#include "loss_functions.h"
-#include "derivatives.h"
-#include "idx.h"
+#include <nn.h>
+#include <activations.h>
+#include <loss_functions.h>
+#include <derivatives.h>
+#include <idx.h>
 
 Layer xavier_layer(Eigen::Index inputs, Eigen::Index outputs, const Activation &activation) {
 	float limit = std::sqrt(6.f / (inputs + outputs));

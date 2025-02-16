@@ -10,6 +10,7 @@ enum struct Activation: uint8_t {
 	RELU    = 1,
 	SIGMOID = 2,
 	TANH    = 3,
+	SOFTMAX = 4
 };
 
 inline constexpr Eigen::MatrixXf apply_activation(const Eigen::MatrixXf &inputs, Activation activation) {
@@ -22,6 +23,8 @@ inline constexpr Eigen::MatrixXf apply_activation(const Eigen::MatrixXf &inputs,
 			return Activations::sigmoid(inputs);
 		case Activation::TANH:
 			return Activations::tanh(inputs);
+		case Activation::SOFTMAX:
+			return Activations::softmax(inputs);
 	}
 
 	throw std::runtime_error(std::format("Unknown activation function {}", static_cast<uint8_t>(activation)));
@@ -30,13 +33,15 @@ inline constexpr Eigen::MatrixXf apply_activation(const Eigen::MatrixXf &inputs,
 inline constexpr Eigen::MatrixXf apply_derivative(const Eigen::MatrixXf &inputs, Activation activation) {
 	switch (activation) {
 		case Activation::LINEAR:
-			return Derivatives::linear(inputs);;
+			return Derivatives::linear(inputs);
 		case Activation::RELU:
 			return Derivatives::relu(inputs);
 		case Activation::SIGMOID:
 			return Derivatives::sigmoid(inputs);
 		case Activation::TANH:
 			return Derivatives::tanh(inputs);
+		case Activation::SOFTMAX:
+			return Derivatives::linear(inputs); // Assume cross-entropy loss
 	}
 
 	throw std::runtime_error(std::format("Unknown activation function {}", static_cast<uint8_t>(activation)));

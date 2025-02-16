@@ -3,10 +3,10 @@
 #include <Eigen/Core>
 
 #include <nn.h>
-#include <activations.h>
 #include <loss_functions.h>
-#include <derivatives.h>
-#include <idx.h>
+#include <serialization.h>
+
+#include "idx.h"
 
 Layer xavier_layer(Eigen::Index inputs, Eigen::Index outputs, const Activation &activation) {
 	float limit = std::sqrt(6.f / (inputs + outputs));
@@ -81,8 +81,6 @@ int main(int argc, const char *argv[]) {
 	float accuracy = static_cast<float>(correct_predictions) / outputs.cols() * 100;
 
 	std::println("Accuracy {} %", accuracy);
-
-	//SERIALIZACE TADY I V REC PYTHONU. SERIALIZOVAT V PYTHONU INICIALNI HODNOTY A ZKUSIT TADY JAKO ZACATEK. Melo by se ucit identicky
 
 	return 0;
 }

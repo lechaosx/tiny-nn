@@ -4,12 +4,10 @@
 
 #include <Eigen/Core>
 
-#include "activations.h"
-
 namespace LossFunctions {
 
 inline constexpr float softmax_cross_entropy(const Eigen::MatrixXf& outputs, const Eigen::MatrixXf& references) {
-	return -(references.array() * Activations::softmax(outputs).array().max(std::numeric_limits<float>::epsilon()).log()).sum();
+	return -(references.array() * outputs.array().max(std::numeric_limits<float>::epsilon()).log()).sum();
 }
 
 inline constexpr float binary_cross_entropy(const Eigen::MatrixXf& outputs, const Eigen::MatrixXf& references) {

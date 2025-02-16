@@ -4,8 +4,6 @@
 
 #include <Eigen/Core>
 
-#include "activations.h"
-
 namespace Derivatives {
 
 inline constexpr Eigen::MatrixXf linear(const Eigen::MatrixXf& x) {
@@ -33,7 +31,7 @@ inline constexpr Eigen::MatrixXf relu(const Eigen::MatrixXf& x) {
 }
 
 inline constexpr Eigen::MatrixXf softmax_cross_entropy(const Eigen::MatrixXf& outputs, const Eigen::MatrixXf& references) {
-	return Activations::softmax(outputs) - references;
+	return outputs - references;
 }
 
 inline constexpr Eigen::MatrixXf binary_cross_entropy(const Eigen::MatrixXf& outputs, const Eigen::MatrixXf& references) {

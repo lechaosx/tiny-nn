@@ -70,21 +70,21 @@ concept LossDerivative = requires(const F &f, const Eigen::MatrixXf &outputs) {
 
 
 template <LossDerivative F>
-inline constexpr Eigen::MatrixXf train(std::span<Layer> nn, const Eigen::MatrixXf &inputs, float learningRate, const F &lossDerivative) {
+inline constexpr Eigen::MatrixXf train(std::span<Layer> nn, const Eigen::MatrixXf &inputs, const F &lossDerivative) {
 	if (nn.empty()) {
 		return lossDerivative(inputs);
 	}
 
 	Layer &layer = nn.front();
 
-	auto linear_output = (layer.weights * inputs).colwise() + layer.biases;
+	Eigen::MatrixXf linear_output = (layer.weights * inputs).colwise() + layer.biases;
 
-	Eigen::MatrixXf delta = train(nn.subspan(1), apply_activation(linear_output, layer.activation), learningRate, lossDerivative).array() * apply_derivative(linear_output, layer.activation).array();
+	Eigen::MatrixXf delta = train(nn.subspan(1), apply_activation(linear_output, layer.activation), lossDerivative).array() * apply_derivative(linear_output, layer.activation).array();
 
 	Eigen::MatrixXf prev_delta = layer.weights.transpose() * delta;
 
-	layer.weights -= learningRate * delta * inputs.transpose() / inputs.cols();
-	layer.biases -= learningRate * delta.rowwise().sum() / inputs.cols();
+	layer.weights -= delta * inputs.transpose();
+	layer.biases -= delta.rowwise().sum();
 
 	return prev_delta;
 }

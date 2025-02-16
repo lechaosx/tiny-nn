@@ -39,11 +39,11 @@ int main(int argc, const char *argv[]) {
 	std::vector<Layer> nn {
 		xavier_layer(inputs.rows(), 512, Activation::RELU),
 		xavier_layer(512, 256, Activation::RELU),
-		xavier_layer(256, num_classes, Activation::LINEAR),
+		xavier_layer(256, num_classes, Activation::SOFTMAX),
 	};
 
 	const size_t NUM_EPOCHS = 10;
-	const size_t BATCH_SIZE = 64;
+	const size_t BATCH_SIZE = 100;
 
 	for (size_t epoch = 0; epoch < NUM_EPOCHS; ++epoch) {
 		float loss = 0.f;
@@ -56,10 +56,10 @@ int main(int argc, const char *argv[]) {
 			
 			auto lossDerivative = [&](const Eigen::MatrixXf &outputs) -> Eigen::MatrixXf {
 				loss += LossFunctions::softmax_cross_entropy(outputs, batch_labels);
-				return Derivatives::softmax_cross_entropy(outputs, batch_labels);
+				return Derivatives::softmax_cross_entropy(outputs, batch_labels) * 0.01f / outputs.cols(); // Also applies learning rate
 			};
 
-			train(nn, batch_inputs, 0.01, lossDerivative);
+			train(nn, batch_inputs, lossDerivative);
 		}
 
 		std::println("Epoch {}/{}, Loss: {}", epoch + 1, NUM_EPOCHS, loss / inputs.cols());

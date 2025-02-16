@@ -43,7 +43,7 @@ int main(int argc, const char *argv[]) {
 	};
 
 	const size_t NUM_EPOCHS = 10;
-	const size_t BATCH_SIZE = 100;
+	const size_t BATCH_SIZE = 64;
 
 	for (size_t epoch = 0; epoch < NUM_EPOCHS; ++epoch) {
 		float loss = 0.f;
@@ -81,6 +81,9 @@ int main(int argc, const char *argv[]) {
 	float accuracy = static_cast<float>(correct_predictions) / outputs.cols() * 100;
 
 	std::println("Accuracy {} %", accuracy);
+
+	std::ofstream output("output.json");
+	output << serialize(nn);
 
 	return 0;
 }

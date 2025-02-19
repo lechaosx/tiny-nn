@@ -2,7 +2,8 @@
 
 #include <Eigen/Core>
 
-#include <nn.h>
+#include <feed.h>
+#include <train.h>
 #include <serialization.h>
 #include <loss_functions.h>
 #include <activations.h>
@@ -47,7 +48,7 @@ int main(int argc, const char *argv[]) {
 	std::vector<Activation> activations {
 		Activations::relu,
 		Activations::relu,
-		Activations::softmax,
+		Activations::linear,
 	};
 
 	std::vector<ActivationDerivative> activation_derivatives {
@@ -69,8 +70,9 @@ int main(int argc, const char *argv[]) {
 			Eigen::MatrixXf batch_labels = one_hot_encode(labels.block(0, batch_start, labels.rows(), batch_end - batch_start), num_classes);
 			
 			auto lossDerivative = [&](const Eigen::MatrixXf &outputs) -> Eigen::MatrixXf {
-				loss += LossFunctions::softmax_cross_entropy(outputs, batch_labels);
-				return Derivatives::softmax_cross_entropy(outputs, batch_labels) * 0.01f / outputs.cols(); // Also applies learning rate
+				Eigen::MatrixXf softmax = Activations::softmax(outputs);
+				loss += LossFunctions::softmax_cross_entropy(softmax, batch_labels);
+				return Derivatives::softmax_cross_entropy(softmax, batch_labels) * 0.01f / outputs.cols(); // Also applies learning rate
 			};
 
 			train(zip(coefficients, activations, activation_derivatives), batch_inputs, lossDerivative);

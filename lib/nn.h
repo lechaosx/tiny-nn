@@ -1,90 +1,75 @@
 #pragma once
 
+#include <functional>
+
 #include <Eigen/Core>
 
-#include "activations.h"
-#include "derivatives.h"
+using Activation           = std::function<Eigen::MatrixXf(const Eigen::MatrixXf &)>;
+using ActivationDerivative = std::function<Eigen::MatrixXf(const Eigen::MatrixXf &)>;
+using LossDerivative       = std::function<Eigen::MatrixXf(const Eigen::MatrixXf &)>;
 
-enum struct Activation: uint8_t {
-	LINEAR  = 0,
-	RELU    = 1,
-	SIGMOID = 2,
-	TANH    = 3,
-	SOFTMAX = 4
-};
-
-inline constexpr Eigen::MatrixXf apply_activation(const Eigen::MatrixXf &inputs, Activation activation) {
-	switch (activation) {
-		case Activation::LINEAR:
-			return Activations::linear(inputs);;
-		case Activation::RELU:
-			return Activations::relu(inputs);
-		case Activation::SIGMOID:
-			return Activations::sigmoid(inputs);
-		case Activation::TANH:
-			return Activations::tanh(inputs);
-		case Activation::SOFTMAX:
-			return Activations::softmax(inputs);
-	}
-
-	throw std::runtime_error(std::format("Unknown activation function {}", static_cast<uint8_t>(activation)));
-}
-
-inline constexpr Eigen::MatrixXf apply_derivative(const Eigen::MatrixXf &inputs, Activation activation) {
-	switch (activation) {
-		case Activation::LINEAR:
-			return Derivatives::linear(inputs);
-		case Activation::RELU:
-			return Derivatives::relu(inputs);
-		case Activation::SIGMOID:
-			return Derivatives::sigmoid(inputs);
-		case Activation::TANH:
-			return Derivatives::tanh(inputs);
-		case Activation::SOFTMAX:
-			return Derivatives::linear(inputs); // Assume cross-entropy loss
-	}
-
-	throw std::runtime_error(std::format("Unknown activation function {}", static_cast<uint8_t>(activation)));
-}
-
-struct Layer {
+struct Coefficients {
 	Eigen::MatrixXf weights;
 	Eigen::VectorXf biases;
-	Activation activation;
 };
 
-inline constexpr Eigen::MatrixXf feed(std::span<const Layer> nn, const Eigen::MatrixXf &inputs) {
-	if (nn.empty()) {
+struct FeedLayer {
+	const Coefficients &coefficients;
+	const Activation   &activation;
+};
+
+struct TrainLayer {
+	Coefficients         &coefficients;
+	Activation           &activation;
+	ActivationDerivative &activation_derivative;
+};
+
+inline constexpr std::vector<FeedLayer> zip(std::span<const Coefficients> coefficients, std::span<const Activation> activations) {
+	std::vector<FeedLayer> zipped {};
+
+	for (size_t i = 0; i < std::min({ std::size(coefficients), std::size(activations) }); ++i) {
+		zipped.emplace_back(coefficients[i], activations[i]);
+	}
+
+	return zipped;
+};
+
+inline constexpr std::vector<TrainLayer> zip(std::span<Coefficients> coefficients, std::span<Activation> activations, std::span<ActivationDerivative> activation_derivatives) {
+	std::vector<TrainLayer> zipped {};
+
+	for (size_t i = 0; i < std::min({ std::size(coefficients), std::size(activations), std::size(activation_derivatives) }); ++i) {
+		zipped.emplace_back(coefficients[i], activations[i], activation_derivatives[i]);
+	}
+
+	return zipped;
+}
+
+
+inline constexpr Eigen::MatrixXf feed(std::span<const FeedLayer> layers, const Eigen::MatrixXf &inputs) {
+	if (layers.empty()) {
 		return inputs;
 	}
 
-	const Layer &layer = nn.front();
+	const FeedLayer &layer = layers.front();
 
-	return feed(nn.subspan(1), apply_activation((layer.weights * inputs).colwise() + layer.biases, layer.activation));
+	return feed(layers.subspan(1), layer.activation((layer.coefficients.weights * inputs).colwise() + layer.coefficients.biases));
 }
 
-template<typename F>
-concept LossDerivative = requires(const F &f, const Eigen::MatrixXf &outputs) {
-	{ f(outputs) } -> std::same_as<Eigen::MatrixXf>;
-};
-
-
-template <LossDerivative F>
-inline constexpr Eigen::MatrixXf train(std::span<Layer> nn, const Eigen::MatrixXf &inputs, const F &lossDerivative) {
-	if (nn.empty()) {
+inline constexpr Eigen::MatrixXf train(std::span<const TrainLayer> layers, const Eigen::MatrixXf &inputs, const LossDerivative &lossDerivative) {
+	if (layers.empty()) {
 		return lossDerivative(inputs);
 	}
 
-	Layer &layer = nn.front();
+	const TrainLayer &layer = layers.front();
 
-	Eigen::MatrixXf linear_output = (layer.weights * inputs).colwise() + layer.biases;
+	Eigen::MatrixXf linear_output = (layer.coefficients.weights * inputs).colwise() + layer.coefficients.biases;
 
-	Eigen::MatrixXf delta = train(nn.subspan(1), apply_activation(linear_output, layer.activation), lossDerivative).array() * apply_derivative(linear_output, layer.activation).array();
+	Eigen::MatrixXf delta = train(layers.subspan(1), layer.activation(linear_output), lossDerivative).array() * layer.activation_derivative(linear_output).array();
 
-	Eigen::MatrixXf prev_delta = layer.weights.transpose() * delta;
+	Eigen::MatrixXf prev_delta = layer.coefficients.weights.transpose() * delta;
 
-	layer.weights -= delta * inputs.transpose();
-	layer.biases -= delta.rowwise().sum();
+	layer.coefficients.weights -= delta * inputs.transpose();
+	layer.coefficients.biases -= delta.rowwise().sum();
 
 	return prev_delta;
 }

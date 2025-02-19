@@ -17,15 +17,15 @@ TEST(SerializeAndDeserializeTest, RoundTrip) {
 	Eigen::VectorXf biases(2);
 	biases << 0.5f, 1.5f;
 
-	Layer layer(weights, biases, Activation::SIGMOID);
+	Coefficients coefficients(weights, biases);
 
-	std::vector<Layer> nn = { layer };
+	std::vector<Coefficients> layers = { coefficients };
 
-	std::vector<Layer> deserialized_nn = deserialize(serialize(nn));
+	std::vector<Coefficients> deserialized_nn = deserialize(serialize(layers));
 
-	ASSERT_EQ(deserialized_nn.size(), nn.size());
+	ASSERT_EQ(deserialized_nn.size(), layers.size());
 	
-	const Layer& deserialized_layer = deserialized_nn[0];
+	const Coefficients& deserialized_layer = deserialized_nn[0];
 
 	ASSERT_EQ(deserialized_layer.weights.rows(), 2);
 	ASSERT_EQ(deserialized_layer.weights.cols(), 2);
@@ -37,7 +37,5 @@ TEST(SerializeAndDeserializeTest, RoundTrip) {
 	ASSERT_EQ(deserialized_layer.biases.size(), 2);
 	ASSERT_FLOAT_EQ(deserialized_layer.biases(0), 0.5f);
 	ASSERT_FLOAT_EQ(deserialized_layer.biases(1), 1.5f);
-
-	ASSERT_EQ(deserialized_layer.activation, Activation::SIGMOID);
 }
 

@@ -3,15 +3,17 @@
 #include <Eigen/Core>
 
 #include <nn.h>
-#include <loss_functions.h>
 #include <serialization.h>
+#include <loss_functions.h>
+#include <activations.h>
+#include <derivatives.h>
 
 #include "idx.h"
 
-Layer xavier_layer(Eigen::Index inputs, Eigen::Index outputs, const Activation &activation) {
+Coefficients xavier_layer(Eigen::Index inputs, Eigen::Index outputs) {
 	float limit = std::sqrt(6.f / (inputs + outputs));
 
-	return { Eigen::MatrixXf::Random(outputs, inputs) * limit, Eigen::VectorXf::Zero(outputs), activation };
+	return { Eigen::MatrixXf::Random(outputs, inputs) * limit, Eigen::VectorXf::Zero(outputs) };
 }
 
 constexpr Eigen::MatrixXf one_hot_encode(const Eigen::RowVector<uint8_t, Eigen::Dynamic> &labels, uint8_t num_classes) {
@@ -36,10 +38,22 @@ int main(int argc, const char *argv[]) {
 
 	uint8_t num_classes = *std::max_element(labels.data(), labels.data() + labels.cols()) + 1;
 
-	std::vector<Layer> nn {
-		xavier_layer(inputs.rows(), 512, Activation::RELU),
-		xavier_layer(512, 256, Activation::RELU),
-		xavier_layer(256, num_classes, Activation::SOFTMAX),
+	std::vector<Coefficients> coefficients {
+		xavier_layer(inputs.rows(), 512),
+		xavier_layer(512, 256),
+		xavier_layer(256, num_classes),
+	};
+
+	std::vector<Activation> activations {
+		Activations::relu,
+		Activations::relu,
+		Activations::softmax,
+	};
+
+	std::vector<ActivationDerivative> activation_derivatives {
+		Derivatives::relu,
+		Derivatives::relu,
+		Derivatives::linear,
 	};
 
 	const size_t NUM_EPOCHS = 10;
@@ -49,7 +63,7 @@ int main(int argc, const char *argv[]) {
 		float loss = 0.f;
 
 		for (Eigen::Index batch_start = 0; batch_start < inputs.cols(); batch_start += BATCH_SIZE) {
-			const size_t batch_end = std::min(batch_start + BATCH_SIZE, static_cast<size_t>(inputs.cols()));
+			size_t batch_end = std::min(batch_start + BATCH_SIZE, static_cast<size_t>(inputs.cols()));
 
 			Eigen::MatrixXf batch_inputs = inputs.block(0, batch_start, inputs.rows(), batch_end - batch_start);
 			Eigen::MatrixXf batch_labels = one_hot_encode(labels.block(0, batch_start, labels.rows(), batch_end - batch_start), num_classes);
@@ -59,7 +73,7 @@ int main(int argc, const char *argv[]) {
 				return Derivatives::softmax_cross_entropy(outputs, batch_labels) * 0.01f / outputs.cols(); // Also applies learning rate
 			};
 
-			train(nn, batch_inputs, lossDerivative);
+			train(zip(coefficients, activations, activation_derivatives), batch_inputs, lossDerivative);
 		}
 
 		std::println("Epoch {}/{}, Loss: {}", epoch + 1, NUM_EPOCHS, loss / inputs.cols());
@@ -68,7 +82,7 @@ int main(int argc, const char *argv[]) {
 	Eigen::MatrixXf test_inputs = read_idx_images(argv[3]);
 	Eigen::RowVector<uint8_t, Eigen::Dynamic> test_labels = read_idx_labels(argv[4]);
 
-	Eigen::MatrixXf outputs = feed(nn, test_inputs);
+	Eigen::MatrixXf outputs = feed(zip(coefficients, activations), test_inputs);
 
 	int correct_predictions = 0;
 
@@ -83,7 +97,7 @@ int main(int argc, const char *argv[]) {
 	std::println("Accuracy {} %", accuracy);
 
 	std::ofstream output("output.json");
-	output << serialize(nn);
+	output << serialize(coefficients);
 
 	return 0;
 }

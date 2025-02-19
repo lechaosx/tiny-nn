@@ -5,21 +5,20 @@
 
 #include "nn.h"
 
-nlohmann::json serialize(std::span<const Layer> nn) {
+nlohmann::json serialize(std::span<const Coefficients> layers) {
 	nlohmann::json model_json {};
 
-	for (const Layer& layer : nn) {
+	for (const Coefficients& coefficients: layers) {
 		nlohmann::json layer_json {};
-		layer_json["weights"] = std::vector<std::vector<float>>(layer.weights.rows(), std::vector<float>(layer.weights.cols()));
+		layer_json["weights"] = std::vector<std::vector<float>>(coefficients.weights.rows(), std::vector<float>(coefficients.weights.cols()));
 
-		for (Eigen::Index i = 0; i < layer.weights.rows(); ++i) {
-			for (Eigen::Index j = 0; j < layer.weights.cols(); ++j) {
-				layer_json["weights"][i][j] = layer.weights(i, j);
+		for (Eigen::Index i = 0; i < coefficients.weights.rows(); ++i) {
+			for (Eigen::Index j = 0; j < coefficients.weights.cols(); ++j) {
+				layer_json["weights"][i][j] = coefficients.weights(i, j);
 			}
 		}
 
-		layer_json["biases"] = std::vector<float>(layer.biases.data(),  layer.biases.data() + layer.biases.size());
-		layer_json["activation"] = std::format("{}", static_cast<uint8_t>(layer.activation));
+		layer_json["biases"] = std::vector<float>(coefficients.biases.data(),  coefficients.biases.data() + coefficients.biases.size());
 
 		model_json.push_back(layer_json);
 	}
@@ -27,29 +26,27 @@ nlohmann::json serialize(std::span<const Layer> nn) {
 	return model_json;
 }
 
-std::vector<Layer> deserialize(const nlohmann::json &model_json) {
-	std::vector<Layer> nn {};
+std::vector<Coefficients> deserialize(const nlohmann::json &model_json) {
+	std::vector<Coefficients> layers {};
 	
-	for (const auto& layer_json : model_json) {
-		size_t rows = layer_json["weights"].size();
-		size_t cols = layer_json["weights"][0].size();
+	for (const auto& coefficients_json : model_json) {
+		size_t rows = coefficients_json["weights"].size();
+		size_t cols = coefficients_json["weights"][0].size();
 
 		Eigen::MatrixXf weights(rows, cols);
 		for (size_t i = 0; i < rows; ++i) {
 			for (size_t j = 0; j < cols; ++j) {
-				weights(i, j) = layer_json["weights"][i][j];
+				weights(i, j) = coefficients_json["weights"][i][j];
 			}
 		}
 
 		Eigen::VectorXf biases(rows);
 		for (size_t i = 0; i < rows; ++i) {
-			biases(i) = layer_json["biases"][i];
+			biases(i) = coefficients_json["biases"][i];
 		}
 
-		Activation activation = static_cast<Activation>(std::stoi(std::string(layer_json["activation"])));
-
-		nn.emplace_back(weights, biases, activation);
+		layers.emplace_back(weights, biases);
 	}
 
-	return nn;
+	return layers;
 }

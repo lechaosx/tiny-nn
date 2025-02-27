@@ -6,6 +6,7 @@ include(CTest)
 
 add_subdirectory(lib)
 add_subdirectory(tools)
+add_subdirectory(gdextension)
 
 if(BUILD_TESTING)
 	add_subdirectory(tests)

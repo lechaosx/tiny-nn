@@ -1,0 +1,22 @@
+[configuration]
+
+entry_symbol = "init"
+compatibility_minimum = "4.3"
+reloadable = true
+
+[libraries]
+
+windows.debug.x86_32   = "res://neural_network/libneural-network.windows.debug.x86.dll"
+windows.release.x86_32 = "res://neural_network/libneural-network.windows.release.x86.dll"
+windows.debug.x86_64   = "res://neural_network/libneural-network.windows.debug.x86_64.dll"
+windows.release.x86_64 = "res://neural_network/libneural-network.windows.release.x86_64.dll"
+linux.debug.x86_64     = "res://neural_network/libneural-network.linux.debug.x86_64.so"
+linux.release.x86_64   = "res://neural_network/libneural-network.linux.release.x86_64.so"
+linux.debug.arm64      = "res://neural_network/libneural-network.linux.debug.aarch64.so"
+linux.release.arm64    = "res://neural_network/libneural-network.linux.release.aarch64.so"
+linux.debug.rv64       = "res://neural_network/libneural-network.linux.debug.riscv64.so"
+linux.release.rv64     = "res://neural_network/libneural-network.linux.release.riscv64.so"
+android.debug.x86_64   = "res://neural_network/libneural-network.android.debug.x86_64.so"
+android.release.x86_64 = "res://neural_network/libneural-network.android.release.x86_64.so"
+android.debug.arm64    = "res://neural_network/libneural-network.android.debug.aarch64.so"
+android.release.arm64  = "res://neural_network/libneural-network.android.release.aarch64.so"

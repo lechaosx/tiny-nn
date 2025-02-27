@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://5mtilcq6qlf8"]
+
+[ext_resource type="Script" path="res://canvas.gd" id="1_gldji"]
+
+[node name="Canvas" type="TextureRect"]
+texture_filter = 1
+clip_contents = true
+expand_mode = 3
+script = ExtResource("1_gldji")

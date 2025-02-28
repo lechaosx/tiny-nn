@@ -4,6 +4,8 @@ extends GridContainer
 
 @export var values: Array[String] = []
 
+var _progress_bars: Array[ProgressBar] = []
+
 func _ready() -> void:
 	for value in values:
 		var progress_bar = ProgressBar.new()
@@ -15,5 +17,10 @@ func _ready() -> void:
 		progress_bar.size_flags_vertical = Control.SIZE_FILL
 		label.text = value
 		
+		_progress_bars.append(progress_bar)
+		
 		add_child(progress_bar)
 		add_child(label)
+
+func set_progress(index: int, value: float) -> void:
+	_progress_bars[index].value = clamp(value, 0, 100)

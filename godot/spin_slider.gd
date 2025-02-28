@@ -1,4 +1,3 @@
-@tool
 extends VBoxContainer
 
 signal min_value_changed(value: float)

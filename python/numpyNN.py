@@ -128,14 +128,14 @@ for epoch in range(common.epochs):
 	for images, labels in common.train_loader:
 		# Flatten the image data and convert to numpy array
 		images = images.view(-1, 28 * 28).numpy()
-		labels = common.one_hot_encode(labels.numpy())
+		labels = one_hot_encode(labels.numpy())
 
 		def loss_derivative(x):
 			global loss
-			loss += common.cross_entropy_loss(labels, x)
+			loss += cross_entropy_loss(labels, x)
 			return (x - labels) * common.learning_rate / len(x)
 
-		train(common.nn, images, loss_derivative)
+		train(nn, images, loss_derivative)
 
 	print(f"Epoch {epoch + 1}/{common.epochs}, Loss: {loss / len(common.train_dataset):.4f}")
 
@@ -147,7 +147,7 @@ for images, labels in common.test_loader:
 	images = images.view(-1, 28 * 28).numpy()
 	labels = labels.numpy()
 
-	predictions = numpy.argmax(feed(common.nn, images), axis = 1)
+	predictions = numpy.argmax(feed(nn, images), axis = 1)
 
 	correct += (predictions == labels).sum()
 	total += labels.size
@@ -155,4 +155,4 @@ for images, labels in common.test_loader:
 print(f"Test Accuracy: {100 * correct / total:.2f}%")
 
 with open("output.json", "w") as outfile: 
-	json.dump(common.serialize(common.nn), outfile)
+	json.dump(serialize(nn), outfile)

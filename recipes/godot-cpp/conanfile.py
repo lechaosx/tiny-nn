@@ -60,6 +60,8 @@ class GodotCppRecipe(ConanFile):
 		copy(self, "*.h", os.path.join(self.source_folder, "gdextension"), os.path.join(self.package_folder, "include"))
 		copy(self, "*.hpp", os.path.join(self.source_folder, "include"), os.path.join(self.package_folder, "include"))
 		copy(self, "*.hpp", os.path.join(self.build_folder, "gen", "include"), os.path.join(self.package_folder, "include"))
+		copy(self, "*.inc", os.path.join(self.source_folder, "include"), os.path.join(self.package_folder, "include"))
+		copy(self, "*.inc", os.path.join(self.build_folder, "gen", "include"), os.path.join(self.package_folder, "include"))
 		
 		copy(self, "*.a", self.build_folder, os.path.join(self.package_folder, "lib"), keep_path=False)
 		copy(self, "*.lib", self.build_folder, os.path.join(self.package_folder, "lib"), keep_path=False)

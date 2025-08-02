@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://dpbtggeqqyv8m"]
 
-[ext_resource type="Script" path="res://probabilities.gd" id="1_0tblq"]
+[ext_resource type="Script" uid="uid://m5d76uyo73g1" path="res://probabilities.gd" id="1_0tblq"]
 
 [node name="Probabilities" type="GridContainer"]
 anchors_preset = 15

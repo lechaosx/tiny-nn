@@ -1,6 +1,6 @@
 [gd_scene load_steps=5 format=3 uid="uid://63vyp218q5yd"]
 
-[ext_resource type="Script" path="res://control.gd" id="1_xobkt"]
+[ext_resource type="Script" uid="uid://ckqmlbj5f70pb" path="res://control.gd" id="1_xobkt"]
 [ext_resource type="PackedScene" uid="uid://dn7b5rn7iy2ry" path="res://SpinSlider.tscn" id="2_5xyu2"]
 [ext_resource type="PackedScene" uid="uid://5mtilcq6qlf8" path="res://canvas.tscn" id="2_my5fx"]
 [ext_resource type="PackedScene" uid="uid://dpbtggeqqyv8m" path="res://probabilities.tscn" id="4_o7nsh"]
@@ -18,7 +18,7 @@ script = ExtResource("1_xobkt")
 unique_name_in_owner = true
 title = "Open a File"
 initial_position = 2
-size = Vector2i(519, 180)
+size = Vector2i(545, 180)
 visible = true
 ok_button_text = "Open"
 dialog_hide_on_ok = true
@@ -77,4 +77,3 @@ process_mode = 0
 [connection signal="brush_size_changed" from="MarginContainer/HFlowContainer/Canvas" to="." method="_on_canvas_brush_size_changed"]
 [connection signal="image_changed" from="MarginContainer/HFlowContainer/Canvas" to="." method="_on_canvas_image_changed"]
 [connection signal="value_changed" from="MarginContainer/HFlowContainer/VBoxContainer/BrushSizeSpinSlider" to="." method="_on_brush_size_spin_slider_value_changed"]
-[connection signal="network_changed" from="NeuralNetwork" to="." method="_on_neural_network_network_changed"]

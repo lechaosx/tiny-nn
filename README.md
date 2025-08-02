@@ -9,6 +9,7 @@ TinyNN is a simple work-in-progress neural network implementation in C++ and its
 - **Godot Integration**: Integrates the core library as a `gdscript` Node in Godot engine.
 - **Godot Project**: Provides UI for experimenting with classification of MNIST dataset.
 - **Python Utilities**: Includes Python scripts for data preprocessing and additional neural network implementations using `numpy` and `pytorch`.
+- **Conan recipe for godot-cpp**: Seamless integration of `gdextension` and `conan` package manager for C++.
 
 ## Project Structure
 
@@ -17,10 +18,11 @@ TinyNN is a simple work-in-progress neural network implementation in C++ and its
 - **`godot/`**: Godot project files for UI and visualization.
 - **`tools/`**: Additional tools and utilities, including a main executable.
 - **`gdextension/`**: Godot C++ extensions for neural network integration.
+- **`recipes/`**: Conan packages used in this project that are not yet part of `conancenter`.
 
-## Dependencies
+## Development Environmnet
 
-Project dependencies are managed via [Nix](https://nixos.org/) package manager.
+The development environment is managed via [Nix](https://nixos.org/) package manager.
 This will drop you into a shell with all required dependencies available:
 
 ```
@@ -31,6 +33,15 @@ Alternatively, you can provide the dependencies via your favourite approach and 
 See [flake.nix](flake.nix) for a list of packages used to develop this.
 
 ## Compilation
+
+The project depends on `godot-cpp/4.4` that is not available at `conanceter` at point of writing this text.
+Nevertheless, the recipe is available as part of this project, you just need to export it.
+
+```
+conan export recipes/godot-cpp --version 4.4
+```
+
+After that, you can compile the project. The `conan_provider.cmake` should automatically resolve all `conan` dependencies.
 
 ```
 cmake --preset default

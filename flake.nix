@@ -1,6 +1,4 @@
 {
-	description = "C++ Development Environment";
-
 	inputs = {
 		nixpkgs.url = "github:NixOS/nixpkgs";
 	};
@@ -20,7 +18,7 @@
 				python3Packages.numpy
 				python3Packages.torch
 				python3Packages.torchvision
-				godot_4
+				godot
 			];
 		};
 	};

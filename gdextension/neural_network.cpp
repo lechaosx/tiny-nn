@@ -4,15 +4,7 @@
 #include <activations.h>
 #include <serialization.h>
 
-#include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/core/class_db.hpp>
-
-
-NeuralNetwork::NeuralNetwork() {
-	if (godot::Engine::get_singleton()->is_editor_hint()) {
-		set_process_mode(Node::ProcessMode::PROCESS_MODE_DISABLED);
-	}
-}
 
 bool NeuralNetwork::load_coefficients(const godot::String &path) try {
 	std::ifstream stream(path.utf8().get_data());

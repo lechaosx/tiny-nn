@@ -19,6 +19,7 @@
 				python3Packages.torch
 				python3Packages.torchvision
 				godot
+				emscripten
 			];
 		};
 	};

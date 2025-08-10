@@ -21,6 +21,16 @@
 				godot
 				emscripten
 			];
+
+			shellHook = ''
+				REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+				export EM_CACHE="$REPO_ROOT/.emscripten_cache"
+
+				if [ ! -d "$EM_CACHE" ]; then
+					cp -r ${pkgs.emscripten}/share/emscripten/cache "$EM_CACHE"
+					chmod u+rwX -R "$EM_CACHE"
+				fi
+			'';
 		};
 	};
 }

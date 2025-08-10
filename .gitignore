@@ -1,3 +1,4 @@
 /data/
 /build/
 CMakeUserPresets.json
+/.emscripten_cache/

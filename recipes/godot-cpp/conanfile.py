@@ -46,7 +46,7 @@ class GodotCppRecipe(ConanFile):
 		if self.options.hot_reload:
 			tc.preprocessor_definitions["HOT_RELOAD_ENABLED"] = None
 			
-			if str(self.settings.compiler) in ["gcc", "clang"]:
+			if str(self.settings.compiler) in ["gcc", "clang"] and str(self.settings.os) != "Emscripten":
 				tc.extra_cxxflags.append("-fno-gnu-unique")
 		
 		tc.generate()
@@ -59,8 +59,9 @@ class GodotCppRecipe(ConanFile):
 	def package(self):
 		copy(self, "*.h", os.path.join(self.source_folder, "gdextension"), os.path.join(self.package_folder, "include"))
 		copy(self, "*.hpp", os.path.join(self.source_folder, "include"), os.path.join(self.package_folder, "include"))
-		copy(self, "*.hpp", os.path.join(self.build_folder, "gen", "include"), os.path.join(self.package_folder, "include"))
 		copy(self, "*.inc", os.path.join(self.source_folder, "include"), os.path.join(self.package_folder, "include"))
+
+		copy(self, "*.hpp", os.path.join(self.build_folder, "gen", "include"), os.path.join(self.package_folder, "include"))
 		copy(self, "*.inc", os.path.join(self.build_folder, "gen", "include"), os.path.join(self.package_folder, "include"))
 		
 		copy(self, "*.a", self.build_folder, os.path.join(self.package_folder, "lib"), keep_path=False)
@@ -75,6 +76,6 @@ class GodotCppRecipe(ConanFile):
 		if self.options.hot_reload:
 			self.cpp_info.defines.append("HOT_RELOAD_ENABLED")
 			
-			if str(self.settings.compiler) in ["gcc", "clang"]:
+			if str(self.settings.compiler) in ["gcc", "clang"] and str(self.settings.os) != "Emscripten":
 				self.cpp_info.cxxflags.append("-fno-gnu-unique")
 

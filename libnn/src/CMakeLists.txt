@@ -13,4 +13,4 @@ target_include_directories(nn INTERFACE .)
 
 target_link_libraries(nn INTERFACE Eigen3::Eigen nlohmann_json::nlohmann_json)
 
-target_compile_features(nn INTERFACE cxx_std_26)
+target_compile_features(nn INTERFACE cxx_std_23)

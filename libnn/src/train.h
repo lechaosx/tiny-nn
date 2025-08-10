@@ -2,13 +2,15 @@
 
 #include "nn.h"
 
+#include <span>
+
 struct TrainLayer {
 	Coefficients         &coefficients;
 	Activation           &activation;
 	ActivationDerivative &activation_derivative;
 };
 
-inline constexpr std::vector<TrainLayer> zip(std::span<Coefficients> coefficients, std::span<Activation> activations, std::span<ActivationDerivative> activation_derivatives) {
+inline std::vector<TrainLayer> zip(std::span<Coefficients> coefficients, std::span<Activation> activations, std::span<ActivationDerivative> activation_derivatives) {
 	std::vector<TrainLayer> zipped {};
 
 	for (size_t i = 0; i < std::min({ std::size(coefficients), std::size(activations), std::size(activation_derivatives) }); ++i) {
@@ -18,7 +20,7 @@ inline constexpr std::vector<TrainLayer> zip(std::span<Coefficients> coefficient
 	return zipped;
 }
 
-inline constexpr Eigen::MatrixXf train(std::span<const TrainLayer> layers, const Eigen::MatrixXf &inputs, const LossDerivative &lossDerivative) {
+inline Eigen::MatrixXf train(std::span<const TrainLayer> layers, const Eigen::MatrixXf &inputs, const LossDerivative &lossDerivative) {
 	if (layers.empty()) {
 		return lossDerivative(inputs);
 	}

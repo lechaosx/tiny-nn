@@ -10,4 +10,4 @@ target_sources(train PRIVATE ${SOURCES})
 
 target_link_libraries(train PRIVATE nn Eigen3::Eigen)
 
-target_compile_features(train PRIVATE cxx_std_26)
+target_compile_features(train PRIVATE cxx_std_23)

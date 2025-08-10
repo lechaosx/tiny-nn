@@ -2,12 +2,14 @@
 
 #include "nn.h"
 
+#include <span>
+
 struct FeedLayer {
 	const Coefficients &coefficients;
 	const Activation   &activation;
 };
 
-inline constexpr std::vector<FeedLayer> zip(std::span<const Coefficients> coefficients, std::span<const Activation> activations) {
+inline std::vector<FeedLayer> zip(std::span<const Coefficients> coefficients, std::span<const Activation> activations) {
 	std::vector<FeedLayer> zipped {};
 
 	for (size_t i = 0; i < std::min({ std::size(coefficients), std::size(activations) }); ++i) {
@@ -17,7 +19,7 @@ inline constexpr std::vector<FeedLayer> zip(std::span<const Coefficients> coeffi
 	return zipped;
 };
 
-inline constexpr Eigen::MatrixXf feed(std::span<const FeedLayer> layers, const Eigen::MatrixXf &inputs) {
+inline Eigen::MatrixXf feed(std::span<const FeedLayer> layers, const Eigen::MatrixXf &inputs) {
 	if (layers.empty()) {
 		return inputs;
 	}

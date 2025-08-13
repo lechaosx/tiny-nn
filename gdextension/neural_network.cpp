@@ -5,9 +5,13 @@
 #include <serialization.h>
 
 #include <godot_cpp/core/class_db.hpp>
+#include <godot_cpp/classes/project_settings.hpp>
 
 bool NeuralNetwork::load_coefficients(const godot::String &path) try {
-	std::ifstream stream(path.utf8().get_data());
+	const godot::String &system_path = godot::ProjectSettings::get_singleton()->globalize_path(path);
+
+	godot::print_line(system_path);
+	std::ifstream stream(system_path.utf8().get_data());
 	
 	m_coefficients = deserialize(nlohmann::json::parse(stream));
 
@@ -23,7 +27,7 @@ bool NeuralNetwork::load_coefficients(const godot::String &path) try {
 	return true;
 }
 catch (const std::exception &e) {
-	godot::print_error("Failed to load coefficients from file", __FUNCTION__, __FILE__, __LINE__);
+	godot::print_error(godot::String("Failed to load coefficients from file: ") + e.what(), __FUNCTION__, __FILE__, __LINE__);
 	return false;
 }
 

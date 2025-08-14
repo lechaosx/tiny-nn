@@ -12,7 +12,8 @@
 				"binaryDir": "${sourceDir}/build",
 				"cacheVariables": {
 					"CMAKE_PROJECT_TOP_LEVEL_INCLUDES": "conan_provider.cmake",
-					"CMAKE_COLOR_DIAGNOSTICS": "ON"
+					"CMAKE_COLOR_DIAGNOSTICS": "ON",
+					"GODOTCPP_DISABLE_EXCEPTIONS": "OFF"
 				}
 			}
 		]

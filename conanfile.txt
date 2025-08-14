@@ -2,7 +2,6 @@
 eigen/3.4.0
 nlohmann_json/3.11.3
 gtest/1.15.0
-godot-cpp/godot-4.4.1-stable
 
 [generators]
 CMakeDeps

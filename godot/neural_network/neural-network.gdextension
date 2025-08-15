@@ -20,5 +20,5 @@ android.debug.x86_64   = "res://neural_network/libneural-network.android.debug.x
 android.release.x86_64 = "res://neural_network/libneural-network.android.release.x86_64.so"
 android.debug.arm64    = "res://neural_network/libneural-network.android.debug.aarch64.so"
 android.release.arm64  = "res://neural_network/libneural-network.android.release.aarch64.so"
-web.debug              = "res://neural_network/libneural-network.emscripten.debug.x86.wasm"
-web.release            = "res://neural_network/libneural-network.emscripten.release.x86.wasm"
+web.debug              = "res://neural_network/libneural-network.emscripten.debug.wasm32"
+web.release            = "res://neural_network/libneural-network.emscripten.release.wasm32"

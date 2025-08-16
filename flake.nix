@@ -1,25 +1,27 @@
 {
 	inputs = {
-		nixpkgs.url = "github:NixOS/nixpkgs";
+		nixpkgs.url            = "github:NixOS/nixpkgs";
+		nixpkgs-emscripten.url = "github:NixOS/nixpkgs/nixos-24.11";
 	};
 
-	outputs = { nixpkgs, ... }:
+	outputs = { nixpkgs, nixpkgs-emscripten, ... }:
 	let
-		pkgs = import nixpkgs { system = "x86_64-linux"; };
+		pkgs            = import nixpkgs            { system = "x86_64-linux"; };
+		pkgs-emscripten = import nixpkgs-emscripten { system = "x86_64-linux"; };
 	in {
 		devShells.x86_64-linux.default = pkgs.mkShell {
-			buildInputs = with pkgs; [
-				gcc
-				gdb
-				ninja
-				cmake
-				conan
-				python3
-				python3Packages.numpy
-				python3Packages.torch
-				python3Packages.torchvision
-				godot
-				emscripten
+			buildInputs = [
+				pkgs.gcc
+				pkgs.gdb
+				pkgs.ninja
+				pkgs.cmake
+				pkgs.conan
+				pkgs.python3
+				pkgs.python3Packages.numpy
+				pkgs.python3Packages.torch
+				pkgs.python3Packages.torchvision
+				pkgs.godot
+				pkgs-emscripten.emscripten
 			];
 
 			shellHook = ''
@@ -27,7 +29,7 @@
 				export EM_CACHE="$REPO_ROOT/.emscripten_cache"
 
 				if [ ! -d "$EM_CACHE" ]; then
-					cp -r ${pkgs.emscripten}/share/emscripten/cache "$EM_CACHE"
+					cp -r ${pkgs-emscripten.emscripten}/share/emscripten/cache "$EM_CACHE"
 					chmod u+rwX -R "$EM_CACHE"
 				fi
 			'';

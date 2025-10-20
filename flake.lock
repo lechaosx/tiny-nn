@@ -2,39 +2,22 @@
   "nodes": {
     "nixpkgs": {
       "locked": {
-        "lastModified": 1754129307,
-        "narHash": "sha256-k82b3JK7RiamSz/tTg0vpCCFKx6W4eotETR5Mbdep/E=",
+        "lastModified": 1759050422,
+        "narHash": "sha256-siltmm32GiEVJ35Xd61linvXPyZXStRWJ3QC0K4Q3ec=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "bd210dd16af288350175f92bbadc4a29f213ac83",
+        "rev": "ca40fe77e621d237f5aeaa1c2accf635c4a2ad39",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
-    "nixpkgs-emscripten": {
-      "locked": {
-        "lastModified": 1751274312,
-        "narHash": "sha256-/bVBlRpECLVzjV19t5KMdMFWSwKLtb5RyXdjz3LJT+g=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "50ab793786d9de88ee30ec4e4c24fb4236fc2674",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "nixos-24.11",
         "repo": "nixpkgs",
         "type": "github"
       }
     },
     "root": {
       "inputs": {
-        "nixpkgs": "nixpkgs",
-        "nixpkgs-emscripten": "nixpkgs-emscripten"
+        "nixpkgs": "nixpkgs"
       }
     }
   },
